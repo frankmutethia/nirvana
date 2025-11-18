@@ -6,6 +6,8 @@ const app = express();
 const PORT = process.env.PORT || 8009;
 const mongoose= require('mongoose');
 
+const authRouter = require('./routers/authRouter');
+
 // here is a promise
 mongoose.connect(process.env.MONGO_URI).then(
     ()=> {console.log('Database connected.')}
@@ -18,6 +20,8 @@ app.use(helmet());
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({extended:true}));
+
+app.use('/api/auth', authRouter);
 
 app.get('/', (req, res) => {
   res.json({ message: 'Hello from the server' });
