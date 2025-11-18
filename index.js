@@ -4,6 +4,14 @@ const helmet = require('helmet');
 const cookieParser = require('cookie-parser')
 const app = express();
 const PORT = process.env.PORT || 8009;
+const mongoose= require('mongoose');
+
+// here is a promise
+mongoose.connect(process.env.MONGO_URI).then(
+    ()=> {console.log('Database connected.')}
+).catch(err=>{
+    console.log(err);
+})
 
 app.use(cors());
 app.use(helmet());
