@@ -1,6 +1,9 @@
 const { signupScheme } = require("../middlewares/validator");
 const User = require("../models/usersModel");
 const { doHash, doCompare } = require("../utils/hashing");
+const jwt = require('jsonwebtoken');
+
+
 
 exports.signup = async (req, res) => {
     const {email,password} = req.body;
@@ -45,8 +48,20 @@ exports.signin = async (req, res) => {
       return res.status(401).json({ success: false, message: 'Invalid credentials' });
     }
 
+    const token = jwt.sign({
+      userId: user._id,
+      email: user.email,
+      verified: user.verified,
+    }, process.env.TOKEN_SECRET, { expiresIn: '8h' });
+
+    res.cookie('Authorization', 'Bearer ' + token, {
+      expires: new Date(Date.now() + 8 * 3600000),
+      httpOnly: process.env.NODE_ENV === 'production',
+      secure: process.env.NODE_ENV === 'production',
+    });
+
     user.password = undefined;
-    res.status(200).json({ success: true, message: 'Signed in successfully', user });
+    return res.status(200).json({ success: true, message: 'Signed in successfully', token, user });
   } catch (error) {
     console.log(error);
     res.status(500).json({ success: false, message: 'Something went wrong' });
