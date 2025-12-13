@@ -14,6 +14,11 @@ router.post('/signin', (req, res, next) => {
 	next();
 }, authController.signin);
 
+//Sign out
+router.post('/signout', authController.signout);
+router.patch('/send-verification-code', authController.sendVerificationEmail);
+router.post('/verify-email', authController.verifyEmailCode);
+
 // Example protected route to check token
 router.get('/me', verifyToken, (req, res) => {
 	return res.status(200).json({ success: true, user: req.user });
