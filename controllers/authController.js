@@ -129,9 +129,11 @@ exports.sendVerificationEmail = async(req, res) => {
 }
 
 exports.verifyEmailCode = async(req, res) => {
-  const { email, code } = req.body;
+  const { email, code, verificationcode } = req.body;
+  // Support both 'code' and 'verificationcode' field names
+  const verificationCode = code || verificationcode;
   try {
-    if(!email || !code){
+    if(!email || !verificationCode){
       return res.status(400).json({success:false, message: 'Email and verification code are required'});
     }
 
@@ -156,7 +158,7 @@ exports.verifyEmailCode = async(req, res) => {
     }
 
     // Verify the code using HMAC
-    const hashedInputCode = hmacProcess(code, process.env.HMAC_VERIFICATION_CODE_SECRET);
+    const hashedInputCode = hmacProcess(verificationCode.toString(), process.env.HMAC_VERIFICATION_CODE_SECRET);
     if(hashedInputCode !== user.verificationCode){
       return res.status(401).json({success:false, message: 'Invalid verification code!'});
     }
