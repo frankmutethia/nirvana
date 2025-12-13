@@ -1,4 +1,4 @@
-const { signupScheme } = require("../middlewares/validator");
+const { signupScheme, resetPasswordScheme } = require("../middlewares/validator");
 const User = require("../models/usersModel");
 const { doHash, doCompare, hmacProcess } = require("../utils/hashing");
 const jwt = require('jsonwebtoken');
@@ -173,5 +173,48 @@ exports.verifyEmailCode = async(req, res) => {
   } catch (error) {
     console.log(error);
     res.status(500).json({success:false, message: 'An error occurred while verifying email'});
+  }
+}
+
+exports.resetPassword = async(req, res) => {
+  const { oldPassword, newPassword } = req.body;
+  try {
+    // Validate input
+    const { error, value } = resetPasswordScheme.validate({ oldPassword, newPassword });
+    if(error){
+      return res.status(400).json({success:false, message: error.details[0].message});
+    }
+
+    // Get user from token (set by verifyToken middleware)
+    const userId = req.user.userId;
+    const user = await User.findById(userId).select('+password');
+    
+    if(!user){
+      return res.status(404).json({success:false, message: 'User not found'});
+    }
+
+    // Verify old password
+    const isOldPasswordValid = await doCompare(oldPassword, user.password);
+    if(!isOldPasswordValid){
+      return res.status(401).json({success:false, message: 'Old password is incorrect'});
+    }
+
+    // Check if new password is different from old password
+    const isSamePassword = await doCompare(newPassword, user.password);
+    if(isSamePassword){
+      return res.status(400).json({success:false, message: 'New password must be different from the old password'});
+    }
+
+    // Hash new password
+    const hashedNewPassword = await doHash(newPassword, 12);
+    
+    // Update user password
+    user.password = hashedNewPassword;
+    await user.save();
+
+    return res.status(200).json({success:true, message: 'Password reset successfully'});
+  } catch (error) {
+    console.log(error);
+    res.status(500).json({success:false, message: 'An error occurred while resetting password'});
   }
 }

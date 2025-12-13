@@ -1,6 +1,6 @@
 const express = require('express');
 const authController = require('../controllers/authController');
-const { signinScheme } = require('../middlewares/validator');
+const { signinScheme, resetPasswordScheme } = require('../middlewares/validator');
 const { verifyToken } = require('../middlewares/auth');
 const router = express.Router();
 
@@ -19,6 +19,13 @@ router.post('/signout', authController.signout);
 router.patch('/send-verification-code', authController.sendVerificationEmail);
 router.post('/verify-email', authController.verifyEmailCode);
 router.patch('/verify-verification-code', authController.verifyEmailCode);
+
+// Reset password (requires authentication)
+router.patch('/reset-password', verifyToken, (req, res, next) => {
+	const { error } = resetPasswordScheme.validate(req.body);
+	if (error) return res.status(400).json({ success: false, message: error.details[0].message });
+	next();
+}, authController.resetPassword);
 
 // Example protected route to check token
 router.get('/me', verifyToken, (req, res) => {
